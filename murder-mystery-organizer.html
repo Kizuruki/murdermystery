@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Murder Mystery Organizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #1a0f0a;
+            --secondary-bg: #2d1810;
+            --accent-gold: #d4af37;
+            --accent-crimson: #8b0000;
+            --text-light: #f5e6d3;
+            --text-muted: #9d8570;
+            --border-color: #4a3428;
+            --card-bg: #231610;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 2rem;
+            background-attachment: fixed;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.1) 2px, rgba(0,0,0,.1) 4px),
+                radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(139, 0, 0, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        .main-content {
+            min-width: 0;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 2rem;
+            height: fit-content;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .sidebar h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent-gold);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-player {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-player.dead {
+            opacity: 0.5;
+            border-left-color: var(--accent-crimson);
+        }
+
+        .sidebar-player strong {
+            color: var(--accent-gold);
+            font-family: 'Cinzel', serif;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-player .role {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .sidebar-player .preferences {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-player .objectives {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            padding-left: 1.2rem;
+        }
+
+        .sidebar-player .objectives li {
+            margin-bottom: 0.25rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 0.1em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-style: italic;
+            letter-spacing: 0.05em;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(90deg, transparent, var(--accent-crimson), transparent);
+            margin-bottom: 2rem;
+            border-top: 1px solid var(--accent-gold);
+            border-bottom: 1px solid var(--accent-gold);
+            letter-spacing: 0.15em;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-gold);
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.2);
+        }
+
+        .card h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-gold);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .character-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .character-checkbox:hover {
+            background: var(--border-color);
+            border-color: var(--accent-gold);
+        }
+
+        .character-checkbox input[type="checkbox"] {
+            margin-right: 0.75rem;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-gold);
+        }
+
+        .character-checkbox label {
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        button {
+            font-family: 'Cinzel', serif;
+            background: linear-gradient(135deg, var(--accent-crimson), #660000);
+            color: var(--text-light);
+            border: 2px solid var(--accent-gold);
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #660000, var(--accent-crimson));
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .role-assignment {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-left: 4px solid var(--accent-gold);
+            margin-bottom: 0.75rem;
+            border-radius: 4px;
+            font-size: 1.1rem;
+        }
+
+        .role-assignment strong {
+            color: var(--accent-gold);
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+        }
+
+        .objectives-list {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .objective-item {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-left: 3px solid var(--accent-crimson);
+            border-radius: 4px;
+        }
+
+        select, input[type="number"] {
+            background: var(--secondary-bg);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .action-grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .action-label {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .feedback-section {
+            background: var(--primary-bg);
+            padding: 1.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .feedback-section h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            letter-spacing: 0.08em;
+        }
+
+        .feedback-item {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+
+        .player-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.05em;
+            margin-left: 0.5rem;
+        }
+
+        .alive { background: rgba(0, 128, 0, 0.3); border: 1px solid #00ff00; }
+        .dead { background: rgba(139, 0, 0, 0.3); border: 1px solid var(--accent-crimson); }
+        .good { background: rgba(212, 175, 55, 0.3); border: 1px solid var(--accent-gold); }
+        .evil { background: rgba(139, 0, 0, 0.3); border: 1px solid var(--accent-crimson); }
+
+        .vote-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .vote-item {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .vote-item label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--accent-gold);
+            font-family: 'Cinzel', serif;
+        }
+
+        .vote-results {
+            background: var(--primary-bg);
+            padding: 1.5rem;
+            border-radius: 4px;
+            border: 2px solid var(--accent-gold);
+            margin-top: 1rem;
+        }
+
+        .vote-result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--secondary-bg);
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-crimson);
+        }
+
+        .points-section {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .points-input {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .leaderboard {
+            background: linear-gradient(135deg, var(--accent-crimson), #660000);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 3px solid var(--accent-gold);
+            margin-top: 2rem;
+        }
+
+        .leaderboard h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .podium {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .podium-place {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .podium-place.first {
+            order: 2;
+            transform: scale(1.1);
+            border-color: #ffd700;
+            background: linear-gradient(135deg, var(--card-bg), #3d2a1a);
+        }
+
+        .podium-place.second {
+            order: 1;
+        }
+
+        .podium-place.third {
+            order: 3;
+        }
+
+        .medal {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            background: rgba(139, 0, 0, 0.3);
+            border: 1px solid var(--accent-crimson);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background: rgba(0, 128, 0, 0.3);
+            border: 1px solid #00ff00;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+                max-height: none;
+                order: -1;
+            }
+            
+            .character-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .podium {
+                grid-template-columns: 1fr;
+            }
+            
+            .podium-place.first {
+                transform: none;
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <h1>Murder Mystery</h1>
+            <div class="subtitle">Organizer's Control Panel</div>
+
+            <!-- Setup Phase -->
+            <div id="setupPhase">
+                <div class="card">
+                    <h2>Character Selection</h2>
+                    <div class="character-grid" id="characterGrid"></div>
+                    <div class="button-group">
+                        <button onclick="shuffleRoles()">Shuffle & Assign Roles</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Assignment Display -->
+            <div id="roleAssignmentPhase" class="hidden">
+                <div class="card">
+                    <h2>Role Assignments</h2>
+                    <div id="roleAssignments"></div>
+                    <div class="button-group">
+                        <button onclick="assignObjectives()">Generate Objectives</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objectives Display -->
+            <div id="objectivesPhase" class="hidden">
+                <div class="card">
+                    <h2>Character Objectives</h2>
+                    <div id="objectivesDisplay"></div>
+                    <div class="button-group">
+                        <button onclick="startNightPhase()">Begin Night 1</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Night Phase -->
+            <div id="nightPhase" class="hidden">
+                <div class="phase-indicator">Night Phase - Round <span id="nightRound">1</span></div>
+                <div class="card">
+                    <h2>Night Actions</h2>
+                    <div class="action-grid" id="nightActions"></div>
+                    <div class="button-group">
+                        <button onclick="resolveNightActions()">Resolve Night Actions</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Night Feedback -->
+            <div id="nightFeedbackPhase" class="hidden">
+                <div class="phase-indicator">Night Feedback</div>
+                <div class="card">
+                    <h2>Give Feedback to Players</h2>
+                    <div id="nightFeedback"></div>
+                    <div class="button-group">
+                        <button onclick="startDayPhase()">Proceed to Day Phase</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Day Phase -->
+            <div id="dayPhase" class="hidden">
+                <div class="phase-indicator">Day Phase - Round <span id="dayRound">1</span></div>
+                <div class="card">
+                    <h2>Voting</h2>
+                    <div id="votingSection"></div>
+                    <div class="button-group">
+                        <button onclick="resolveVotes()">Count Votes</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vote Results -->
+            <div id="voteResultsPhase" class="hidden">
+                <div class="card">
+                    <h2>Vote Results</h2>
+                    <div id="voteResults"></div>
+                    <div class="button-group">
+                        <button onclick="checkWinCondition()">Continue</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game End -->
+            <div id="gameEndPhase" class="hidden">
+                <div class="card">
+                    <h2>Game Over</h2>
+                    <div id="gameEndMessage"></div>
+                    <div class="button-group">
+                        <button onclick="showPointsEntry()">Enter Points</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points Entry -->
+            <div id="pointsEntryPhase" class="hidden">
+                <div class="card">
+                    <h2>Points Entry</h2>
+                    <div id="pointsEntry"></div>
+                    <div class="button-group">
+                        <button onclick="calculateFinalScores()">Calculate Final Scores</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final Leaderboard -->
+            <div id="leaderboardPhase" class="hidden">
+                <div class="leaderboard">
+                    <h2>Final Standings</h2>
+                    <div class="podium" id="podium"></div>
+                    <div id="fullLeaderboard"></div>
+                    <div class="button-group">
+                        <button onclick="playAgain()">Play Another Round</button>
+                        <button onclick="wipeData()">Wipe All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar hidden" id="sidebar">
+            <h2>Players</h2>
+            <div id="sidebarContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const CHARACTERS = [
+            { id: 1, name: "Lord/Lady Lochmara" },
+            { id: 2, name: "Viscount/Viscountess Salem" },
+            { id: 3, name: "Count/Countess Red-Violet" },
+            { id: 4, name: "Baron/Baroness Cerulean" },
+            { id: 5, name: "Prince/Princess Endeavour" },
+            { id: 6, name: "Sir/Dame Robin" },
+            { id: 7, name: "Steward/Stewardess Sangria" },
+            { id: 8, name: "Servant Ecstasy" },
+            { id: 9, name: "Prince Koamaru" },
+            { id: 10, name: "Professor Haze" },
+            { id: 11, name: "Colonel Crimson" },
+            { id: 12, name: "Dr. Mysin" },
+            { id: 13, name: "Duke/Duchess Scampi" },
+            { id: 14, name: "Chaplain Atlantis" },
+            { id: 15, name: "Mister/Mistress Rose" },
+            { id: 16, name: "Groundskeeper Lemon" }
+        ];
+
+        const ROLES = ["Murderer", "Spy", "Mayor", "Judge", "Doctor", "Detective"];
+
+        const PREFERENCES = [
+            "Cooking", "Drama", "Occult", "Art", "Music", "Martial Arts",
+            "Painting", "Science", "Sports", "Gardening", "Games", "Opera",
+            "Parties", "Jokes", "Animals", "Justice", "Violence", "Reading",
+            "Gossip", "Socializing", "Solitude", "Academics", "Family", "Nature", "Money"
+        ];
+
+        let gameState = {
+            selectedCharacters: [],
+            players: [],
+            round: 1,
+            mayorPenalty: false,
+            cumulativeScores: {},
+            gamesPlayed: 0,
+            rolePoints: {} // Track role-specific bonus points
+        };
+
+        // Initialize character selection
+        function initCharacterSelection() {
+            const grid = document.getElementById('characterGrid');
+            grid.innerHTML = '';
+            
+            CHARACTERS.forEach(char => {
+                const div = document.createElement('div');
+                div.className = 'character-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="char-${char.id}" value="${char.id}">
+                    <label for="char-${char.id}">${char.name}</label>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function shuffleRoles() {
+            const selected = Array.from(document.querySelectorAll('#characterGrid input:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            if (selected.length < 8 || selected.length > 10) {
+                alert('Please select 8-10 characters');
+                return;
+            }
+
+            gameState.selectedCharacters = selected.map(id => 
+                CHARACTERS.find(c => c.id === id)
+            );
+
+            // Assign roles
+            const numPlayers = selected.length;
+            const numCivilians = numPlayers - 6;
+            const allRoles = [...ROLES, ...Array(numCivilians).fill("Civilian")];
+            
+            // Shuffle roles
+            for (let i = allRoles.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allRoles[i], allRoles[j]] = [allRoles[j], allRoles[i]];
+            }
+
+            gameState.players = gameState.selectedCharacters.map((char, idx) => ({
+                id: char.id,
+                name: char.name,
+                role: allRoles[idx],
+                originalRole: allRoles[idx], // Track original role for Spy promotion
+                alignment: (allRoles[idx] === "Murderer" || allRoles[idx] === "Spy") ? "Evil" : "Good",
+                alive: true,
+                objectives: [],
+                likes: [],
+                dislikes: [],
+                votePower: allRoles[idx] === "Mayor" ? 2 : 1,
+                judgeUses: allRoles[idx] === "Judge" ? 1 : 0,
+                judgeUsedOn: []
+            }));
+
+            // Initialize role points tracking
+            gameState.rolePoints = {};
+            gameState.players.forEach(p => {
+                gameState.rolePoints[p.id] = {
+                    doctorSaves: 0,
+                    detectiveCrimes: 0,
+                    judgeProtections: 0,
+                    mayorCorrectVotes: 0
+                };
+            });
+
+            displayRoleAssignments();
+        }
+
+        function displayRoleAssignments() {
+            const div = document.getElementById('roleAssignments');
+            div.innerHTML = '';
+
+            const murderer = gameState.players.find(p => p.role === "Murderer");
+            const spy = gameState.players.find(p => p.role === "Spy");
+
+            gameState.players.forEach(player => {
+                const assignment = document.createElement('div');
+                assignment.className = 'role-assignment';
+                
+                let extra = '';
+                if (player.role === "Murderer") {
+                    extra = ` (Spy is ${spy.name})`;
+                } else if (player.role === "Spy") {
+                    extra = ` (Murderer is ${murderer.name})`;
+                }
+                
+                assignment.innerHTML = `
+                    <strong>${player.name} (#${player.id}):</strong> ${player.role}${extra}
+                    <span class="player-status ${player.alignment.toLowerCase()}">${player.alignment}</span>
+                `;
+                div.appendChild(assignment);
+            });
+
+            document.getElementById('setupPhase').classList.add('hidden');
+            document.getElementById('roleAssignmentPhase').classList.remove('hidden');
+        }
+
+        function assignObjectives() {
+            // First, assign likes and dislikes to all players
+            gameState.players.forEach(player => {
+                const prefs = [...PREFERENCES].sort(() => 0.5 - Math.random());
+                player.likes = [prefs[0], prefs[1]];
+                player.dislikes = [prefs[2], prefs[3]];
+            });
+
+            // Collect all preferences that exist among players
+            const allLikes = new Set();
+            const allDislikes = new Set();
+            
+            gameState.players.forEach(player => {
+                player.likes.forEach(pref => allLikes.add(pref));
+                player.dislikes.forEach(pref => allDislikes.add(pref));
+            });
+
+            // Now assign objectives to each player
+            gameState.players.forEach(player => {
+                const objectives = [];
+                
+                // Always add exactly one share objective (verbatim)
+                objectives.push("Share to someone that you like/dislike something to complete their objective.");
+                
+                // Create pool of possible find objectives (only for preferences that exist)
+                // Exclude objectives that match the player's own preferences
+                const possibleObjectives = [];
+                
+                allLikes.forEach(pref => {
+                    if (!player.likes.includes(pref)) {
+                        possibleObjectives.push(`Find someone who likes ${pref}.`);
+                    }
+                });
+                
+                allDislikes.forEach(pref => {
+                    if (!player.dislikes.includes(pref)) {
+                        possibleObjectives.push(`Find someone who dislikes ${pref}.`);
+                    }
+                });
+                
+                // Shuffle and pick 2 more objectives from the possible pool
+                const shuffled = possibleObjectives.sort(() => 0.5 - Math.random());
+                objectives.push(shuffled[0]);
+                objectives.push(shuffled[1]);
+                
+                player.objectives = objectives;
+            });
+
+            displayObjectives();
+            updateSidebar();
+        }
+
+        function updateSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('sidebarContent');
+            
+            if (gameState.players.length === 0) {
+                sidebar.classList.add('hidden');
+                return;
+            }
+            
+            sidebar.classList.remove('hidden');
+            content.innerHTML = '';
+            
+            gameState.players.forEach(player => {
+                const div = document.createElement('div');
+                div.className = `sidebar-player${player.alive ? '' : ' dead'}`;
+                
+                // Show role with original role crossed out if changed
+                let roleDisplay = player.role;
+                if (player.originalRole !== player.role) {
+                    roleDisplay = `<span style="text-decoration: line-through; opacity: 0.6;">${player.originalRole}</span> → ${player.role}`;
+                }
+                
+                div.innerHTML = `
+                    <strong>${player.name} (#${player.id})</strong>
+                    <div class="role">${roleDisplay} 
+                        <span class="player-status ${player.alignment.toLowerCase()}">${player.alignment}</span>
+                        ${!player.alive ? '<span class="player-status dead">Dead</span>' : ''}
+                    </div>
+                    <div class="preferences">
+                        <strong>Likes:</strong> ${player.likes.join(', ')}<br>
+                        <strong>Dislikes:</strong> ${player.dislikes.join(', ')}
+                    </div>
+                    <div class="objectives">
+                        <strong>Objectives:</strong>
+                        <ol>
+                            ${player.objectives.map(obj => `<li>${obj}</li>`).join('')}
+                        </ol>
+                    </div>
+                `;
+                content.appendChild(div);
+            });
+        }
+
+        function getRandomPreference() {
+            return PREFERENCES[Math.floor(Math.random() * PREFERENCES.length)];
+        }
+
+        function displayObjectives() {
+            const div = document.getElementById('objectivesDisplay');
+            div.innerHTML = '';
+
+            gameState.players.forEach(player => {
+                const section = document.createElement('div');
+                section.className = 'objectives-list';
+                section.innerHTML = `
+                    <div class="objective-item">
+                        <strong>${player.name} (#${player.id})</strong><br>
+                        <strong>Likes:</strong> ${player.likes.join(', ')}<br>
+                        <strong>Dislikes:</strong> ${player.dislikes.join(', ')}<br>
+                        <strong>Objectives:</strong>
+                        <ol>
+                            ${player.objectives.map(obj => `<li>${obj}</li>`).join('')}
+                        </ol>
+                    </div>
+                `;
+                div.appendChild(section);
+            });
+
+            document.getElementById('roleAssignmentPhase').classList.add('hidden');
+            document.getElementById('objectivesPhase').classList.remove('hidden');
+        }
+
+        function startNightPhase() {
+            document.getElementById('objectivesPhase').classList.add('hidden');
+            document.getElementById('nightPhase').classList.remove('hidden');
+            document.getElementById('nightRound').textContent = gameState.round;
+            
+            generateNightActions();
+        }
+
+        function generateNightActions() {
+            const div = document.getElementById('nightActions');
+            div.innerHTML = '';
+
+            const alivePlayers = gameState.players.filter(p => p.alive);
+            const murderer = gameState.players.find(p => p.role === "Murderer" && p.alive);
+            const spy = gameState.players.find(p => p.role === "Spy" && p.alive);
+            const doctor = gameState.players.find(p => p.role === "Doctor" && p.alive);
+            const detective = gameState.players.find(p => p.role === "Detective" && p.alive);
+
+            // Murderer action (skip night 1)
+            if (murderer && gameState.round > 1) {
+                div.innerHTML += `
+                    <div class="action-row">
+                        <div class="action-label">Murderer kills:</div>
+                        <select id="murdererTarget">
+                            <option value="">No one</option>
+                            ${alivePlayers.filter(p => p.id !== murderer.id).map(p => 
+                                `<option value="${p.id}">${p.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Spy action (only if Spy still exists as Spy, not promoted to Murderer)
+            if (spy) {
+                div.innerHTML += `
+                    <div class="action-row">
+                        <div class="action-label">Spy investigates:</div>
+                        <select id="spyTarget">
+                            <option value="">No one</option>
+                            ${alivePlayers.filter(p => p.id !== spy.id).map(p => 
+                                `<option value="${p.id}">${p.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Doctor action
+            if (doctor) {
+                div.innerHTML += `
+                    <div class="action-row">
+                        <div class="action-label">Doctor saves:</div>
+                        <select id="doctorTarget">
+                            <option value="">No one</option>
+                            ${alivePlayers.filter(p => p.id !== doctor.id).map(p => 
+                                `<option value="${p.id}">${p.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+
+            // Detective action
+            if (detective) {
+                div.innerHTML += `
+                    <div class="action-row">
+                        <div class="action-label">Detective investigates house of:</div>
+                        <select id="detectiveTarget">
+                            <option value="">No one</option>
+                            ${alivePlayers.filter(p => p.id !== detective.id).map(p => 
+                                `<option value="${p.id}">${p.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            }
+        }
+
+        function resolveNightActions() {
+            const murdererTargetId = document.getElementById('murdererTarget')?.value;
+            const spyTargetId = document.getElementById('spyTarget')?.value;
+            const doctorTargetId = document.getElementById('doctorTarget')?.value;
+            const detectiveTargetId = document.getElementById('detectiveTarget')?.value;
+
+            const feedback = {};
+
+            // Initialize feedback for all alive players
+            gameState.players.filter(p => p.alive).forEach(p => {
+                feedback[p.id] = [];
+            });
+
+            // Get role players
+            const murderer = gameState.players.find(p => p.role === "Murderer" && p.alive);
+            const spy = gameState.players.find(p => p.role === "Spy" && p.alive);
+            const doctor = gameState.players.find(p => p.role === "Doctor" && p.alive);
+            const detective = gameState.players.find(p => p.role === "Detective" && p.alive);
+
+            // Track who acted on whom (who is the target of each action)
+            const actions = {
+                murdererTarget: murdererTargetId ? parseInt(murdererTargetId) : null,
+                spyTarget: spyTargetId ? parseInt(spyTargetId) : null,
+                doctorTarget: doctorTargetId ? parseInt(doctorTargetId) : null,
+                detectiveTarget: detectiveTargetId ? parseInt(detectiveTargetId) : null
+            };
+
+            // Resolve murder attempt
+            let murderSucceeded = false;
+            if (actions.murdererTarget && gameState.round > 1) {
+                const target = gameState.players.find(p => p.id === actions.murdererTarget);
+                if (actions.doctorTarget !== actions.murdererTarget) {
+                    target.alive = false;
+                    murderSucceeded = true;
+                    feedback[actions.murdererTarget] = [`You were killed during the night.`];
+                    
+                    // If Murderer dies, promote Spy to Murderer
+                    if (murderer && target.id === murderer.id) {
+                        const spy = gameState.players.find(p => p.role === "Spy" && p.alive);
+                        if (spy) {
+                            spy.role = "Murderer";
+                            feedback[spy.id] = feedback[spy.id] || [];
+                            feedback[spy.id].push(`The Murderer has died. You are now the Murderer.`);
+                        }
+                    }
+                } else {
+                    // Doctor saved someone - track point
+                    if (doctor) {
+                        gameState.rolePoints[doctor.id].doctorSaves++;
+                    }
+                }
+            }
+
+            // Doctor feedback
+            if (doctor && actions.doctorTarget) {
+                const doctorTargetPlayer = gameState.players.find(p => p.id === actions.doctorTarget);
+                if (actions.murdererTarget === actions.doctorTarget) {
+                    feedback[doctor.id].push(`You provided critical care to ${doctorTargetPlayer.name} and saved their life last night.`);
+                } else {
+                    feedback[doctor.id].push(`${doctorTargetPlayer.name} did not require assistance last night.`);
+                }
+            }
+
+            // Spy feedback
+            // Spy learns: did target leave house (acted on someone else) AND who visited target
+            if (spy && actions.spyTarget) {
+                const spyTargetPlayer = gameState.players.find(p => p.id === actions.spyTarget);
+                
+                // Check if spy's target left their house (meaning they performed an action)
+                // The spy target left house if they are one of the role players who acted tonight
+                const targetLeftHouse = (
+                    (murderer && murderer.id === actions.spyTarget && actions.murdererTarget !== null) ||
+                    (doctor && doctor.id === actions.spyTarget && actions.doctorTarget !== null) ||
+                    (detective && detective.id === actions.spyTarget && actions.detectiveTarget !== null) ||
+                    (spy && spy.id === actions.spyTarget && actions.spyTarget !== null) // If spy investigated themselves, they didn't leave
+                );
+                
+                // Check who visited the spy's target (who targeted them)
+                const visitors = [];
+                if (actions.murdererTarget === actions.spyTarget && murderer) visitors.push(murderer.name);
+                if (actions.doctorTarget === actions.spyTarget && doctor) visitors.push(doctor.name);
+                if (actions.detectiveTarget === actions.spyTarget && detective) visitors.push(detective.name);
+                
+                // Generate appropriate feedback
+                if (visitors.length > 0) {
+                    feedback[spy.id].push(`${spyTargetPlayer.name} was visited by ${visitors.join(', ')} last night.`);
+                } else if (targetLeftHouse) {
+                    feedback[spy.id].push(`${spyTargetPlayer.name} left their house last night.`);
+                } else {
+                    feedback[spy.id].push(`${spyTargetPlayer.name} did not leave their house last night.`);
+                }
+            }
+
+            // Detective feedback
+            // Detective investigates a HOUSE - learns if target left house AND who visited
+            if (detective && actions.detectiveTarget) {
+                const detectiveTargetPlayer = gameState.players.find(p => p.id === actions.detectiveTarget);
+                
+                // Check if detective's target left their house
+                const targetLeftHouse = (
+                    (murderer && murderer.id === actions.detectiveTarget && actions.murdererTarget !== null) ||
+                    (spy && spy.id === actions.detectiveTarget && actions.spyTarget !== null) ||
+                    (doctor && doctor.id === actions.detectiveTarget && actions.doctorTarget !== null)
+                );
+                
+                // Check who visited the detective's target's house
+                const visitors = [];
+                if (actions.murdererTarget === actions.detectiveTarget && murderer) {
+                    visitors.push("someone");
+                    // Detective investigated a crime scene - track point
+                    gameState.rolePoints[detective.id].detectiveCrimes++;
+                }
+                if (actions.spyTarget === actions.detectiveTarget && spy) visitors.push("someone");
+                if (actions.doctorTarget === actions.detectiveTarget && doctor) visitors.push("someone");
+                
+                // Generate appropriate feedback
+                if (visitors.length > 0) {
+                    feedback[detective.id].push(`${detectiveTargetPlayer.name} was visited by ${visitors.join(', ')} last night.`);
+                } else if (targetLeftHouse) {
+                    feedback[detective.id].push(`${detectiveTargetPlayer.name} left their house last night.`);
+                } else {
+                    feedback[detective.id].push(`There was no activity at ${detectiveTargetPlayer.name}'s house last night.`);
+                }
+            }
+
+            displayNightFeedback(feedback);
+        }
+
+        function displayNightFeedback(feedback) {
+            const div = document.getElementById('nightFeedback');
+            div.innerHTML = '';
+
+            gameState.players.forEach(player => {
+                if (player.alive || feedback[player.id]?.length > 0) {
+                    const section = document.createElement('div');
+                    section.className = 'feedback-section';
+                    
+                    const items = feedback[player.id] || ['No special information.'];
+                    
+                    section.innerHTML = `
+                        <h3>${player.name} (#${player.id}) - ${player.role}</h3>
+                        ${items.map(item => `<div class="feedback-item">${item}</div>`).join('')}
+                    `;
+                    div.appendChild(section);
+                }
+            });
+
+            document.getElementById('nightPhase').classList.add('hidden');
+            document.getElementById('nightFeedbackPhase').classList.remove('hidden');
+            updateSidebar();
+        }
+
+        function startDayPhase() {
+            // Restore mayor voting power if they were penalized last round
+            if (gameState.mayorPenalty) {
+                const mayor = gameState.players.find(p => p.role === "Mayor" && p.alive);
+                if (mayor) {
+                    mayor.votePower = 2;
+                    gameState.mayorPenalty = false;
+                }
+            }
+            
+            document.getElementById('nightFeedbackPhase').classList.add('hidden');
+            document.getElementById('dayPhase').classList.remove('hidden');
+            document.getElementById('dayRound').textContent = gameState.round;
+            
+            generateVotingSection();
+        }
+
+        function generateVotingSection() {
+            const div = document.getElementById('votingSection');
+            div.innerHTML = '';
+
+            const alivePlayers = gameState.players.filter(p => p.alive);
+            const mayor = gameState.players.find(p => p.role === "Mayor" && p.alive);
+            const judge = gameState.players.find(p => p.role === "Judge" && p.alive);
+
+            const voteGrid = document.createElement('div');
+            voteGrid.className = 'vote-grid';
+
+            alivePlayers.forEach(player => {
+                const voteItem = document.createElement('div');
+                voteItem.className = 'vote-item';
+                
+                const votePowerLabel = player.role === "Mayor" ? ` (${player.votePower} votes)` : '';
+                
+                voteItem.innerHTML = `
+                    <label>${player.name}${votePowerLabel}</label>
+                    <select id="vote-${player.id}">
+                        <option value="skip">Skip</option>
+                        ${alivePlayers.map(p => 
+                            `<option value="${p.id}">${p.name}</option>`
+                        ).join('')}
+                    </select>
+                `;
+                voteGrid.appendChild(voteItem);
+            });
+
+            div.appendChild(voteGrid);
+
+            // Judge save option
+            if (judge && judge.judgeUses > 0) {
+                const judgeSection = document.createElement('div');
+                judgeSection.style.marginTop = '1.5rem';
+                judgeSection.innerHTML = `
+                    <div class="action-row">
+                        <div class="action-label">Judge saves (${judge.judgeUses} uses left):</div>
+                        <select id="judgeSave">
+                            <option value="">No one</option>
+                            ${alivePlayers.filter(p => !judge.judgeUsedOn.includes(p.id)).map(p => 
+                                `<option value="${p.id}">${p.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+                div.appendChild(judgeSection);
+            }
+        }
+
+        function resolveVotes() {
+            const alivePlayers = gameState.players.filter(p => p.alive);
+            const voteCounts = {};
+            let skipVotes = 0;
+            const mayorVotes = {}; // Track what each player voted for (for Mayor feedback)
+
+            // Count votes
+            alivePlayers.forEach(player => {
+                const voteSelect = document.getElementById(`vote-${player.id}`);
+                const vote = voteSelect.value;
+                mayorVotes[player.id] = vote; // Store vote
+                
+                if (vote === 'skip') {
+                    skipVotes += player.votePower;
+                } else {
+                    const targetId = parseInt(vote);
+                    voteCounts[targetId] = (voteCounts[targetId] || 0) + player.votePower;
+                }
+            });
+
+            // Check for skip
+            if (skipVotes >= Math.ceil(alivePlayers.length / 2) + 1) {
+                displayVoteResults(voteCounts, null, 'Vote skipped by majority', null);
+                return;
+            }
+
+            // Find highest vote count
+            const maxVotes = Math.max(...Object.values(voteCounts));
+            const candidates = Object.keys(voteCounts).filter(id => voteCounts[id] === maxVotes).map(id => parseInt(id));
+
+            // Check judge save
+            const judgeSaveId = document.getElementById('judgeSave')?.value;
+            const judge = gameState.players.find(p => p.role === "Judge" && p.alive);
+            
+            if (judgeSaveId && candidates.includes(parseInt(judgeSaveId))) {
+                const savedPlayer = gameState.players.find(p => p.id === parseInt(judgeSaveId));
+                judge.judgeUses--;
+                judge.judgeUsedOn.push(parseInt(judgeSaveId));
+                
+                // Track point if judge saved an innocent (Good) player
+                if (savedPlayer.alignment === "Good") {
+                    gameState.rolePoints[judge.id].judgeProtections++;
+                }
+                
+                displayVoteResults(voteCounts, null, `Judge saved ${savedPlayer.name}`, null);
+                return;
+            }
+
+            // Handle ties
+            if (candidates.length > 1) {
+                displayVoteResults(voteCounts, null, `Tie between: ${candidates.map(id => gameState.players.find(p => p.id === id).name).join(', ')} - No elimination`, null);
+                return;
+            }
+
+            // Eliminate player
+            const eliminatedId = candidates[0];
+            const eliminated = gameState.players.find(p => p.id === eliminatedId);
+            eliminated.alive = false;
+
+            // If Murderer is eliminated, promote Spy to Murderer
+            if (eliminated.role === "Murderer") {
+                const spy = gameState.players.find(p => p.role === "Spy" && p.alive);
+                if (spy) {
+                    spy.role = "Murderer";
+                }
+            }
+
+            // Mayor feedback and penalty
+            const mayor = gameState.players.find(p => p.role === "Mayor" && p.alive);
+            let mayorFeedback = null;
+            
+            if (mayor) {
+                const mayorVote = mayorVotes[mayor.id];
+                if (mayorVote !== 'skip' && parseInt(mayorVote) === eliminatedId) {
+                    // Mayor voted for the eliminated player
+                    mayorFeedback = {
+                        alignment: eliminated.alignment,
+                        penalized: eliminated.alignment === "Good"
+                    };
+                    
+                    if (eliminated.alignment === "Good") {
+                        mayor.votePower = 1;
+                        gameState.mayorPenalty = true;
+                    } else {
+                        // Mayor correctly eliminated an Evil player - track point
+                        gameState.rolePoints[mayor.id].mayorCorrectVotes++;
+                    }
+                }
+            }
+
+            displayVoteResults(voteCounts, eliminated, null, mayorFeedback);
+            updateSidebar();
+        }
+
+        function displayVoteResults(voteCounts, eliminated, message = null, mayorFeedback = null) {
+            const div = document.getElementById('voteResults');
+            div.innerHTML = '';
+
+            // Show vote counts
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'vote-results';
+            resultsDiv.innerHTML = '<h3>Vote Totals</h3>';
+            
+            Object.entries(voteCounts).forEach(([id, count]) => {
+                const player = gameState.players.find(p => p.id === parseInt(id));
+                const item = document.createElement('div');
+                item.className = 'vote-result-item';
+                item.innerHTML = `
+                    <span>${player.name}</span>
+                    <span>${count} vote${count !== 1 ? 's' : ''}</span>
+                `;
+                resultsDiv.appendChild(item);
+            });
+            
+            div.appendChild(resultsDiv);
+
+            // Show result
+            const resultMessage = document.createElement('div');
+            resultMessage.className = message || !eliminated ? 'error' : 'success';
+            resultMessage.style.marginTop = '1rem';
+            resultMessage.style.fontSize = '1.3rem';
+            
+            if (message) {
+                resultMessage.textContent = message;
+            } else if (eliminated) {
+                resultMessage.innerHTML = `
+                    <strong>${eliminated.name}</strong> has been eliminated!<br>
+                    Role: ${eliminated.role}<br>
+                    Alignment: <span class="player-status ${eliminated.alignment.toLowerCase()}">${eliminated.alignment}</span>
+                `;
+            }
+            
+            div.appendChild(resultMessage);
+
+            // Show Mayor feedback if applicable
+            if (mayorFeedback) {
+                const mayorDiv = document.createElement('div');
+                mayorDiv.className = 'feedback-section';
+                mayorDiv.style.marginTop = '1.5rem';
+                mayorDiv.innerHTML = `
+                    <h3>Mayor Feedback</h3>
+                    <div class="feedback-item">
+                        The player you voted for was eliminated.<br>
+                        Their alignment: <span class="player-status ${mayorFeedback.alignment.toLowerCase()}">${mayorFeedback.alignment}</span><br>
+                        ${mayorFeedback.penalized ? '<strong style="color: var(--accent-crimson);">Your voting power is halved for the next round (1 vote instead of 2).</strong>' : '<strong style="color: var(--accent-gold);">Good call! Your voting power remains at 2.</strong>'}
+                    </div>
+                `;
+                div.appendChild(mayorDiv);
+            }
+
+            document.getElementById('dayPhase').classList.add('hidden');
+            document.getElementById('voteResultsPhase').classList.remove('hidden');
+        }
+
+        function checkWinCondition() {
+            const aliveGood = gameState.players.filter(p => p.alive && p.alignment === "Good").length;
+            const aliveEvil = gameState.players.filter(p => p.alive && p.alignment === "Evil").length;
+
+            if (aliveEvil === 0) {
+                endGame("Good");
+            } else if (aliveEvil >= aliveGood) {
+                endGame("Evil");
+            } else {
+                gameState.round++;
+                document.getElementById('voteResultsPhase').classList.add('hidden');
+                startNightPhase();
+            }
+        }
+
+        function endGame(winner) {
+            const div = document.getElementById('gameEndMessage');
+            div.innerHTML = `
+                <div class="success" style="font-size: 1.5rem; text-align: center; padding: 2rem;">
+                    <h2 style="color: var(--accent-gold); margin-bottom: 1rem;">${winner} Team Wins!</h2>
+                    <p>Survivors:</p>
+                    ${gameState.players.filter(p => p.alive).map(p => `
+                        <div style="margin: 0.5rem 0;">
+                            ${p.name} - ${p.role} 
+                            <span class="player-status ${p.alignment.toLowerCase()}">${p.alignment}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('voteResultsPhase').classList.add('hidden');
+            document.getElementById('gameEndPhase').classList.remove('hidden');
+        }
+
+        function showPointsEntry() {
+            const div = document.getElementById('pointsEntry');
+            div.innerHTML = '';
+
+            gameState.players.forEach(player => {
+                const section = document.createElement('div');
+                section.className = 'points-section';
+                
+                // Calculate automatic points
+                const winner = gameState.players.filter(p => p.alive && p.alignment === "Evil").length === 0 ? "Good" : "Evil";
+                const survived = player.alive ? 2 : 0;
+                const winning = (player.alive && player.alignment === winner) ? (winner === "Good" ? 3 : 4) : 0;
+                
+                // Role-specific points
+                const rolePoints = gameState.rolePoints[player.id] || {};
+                let roleSpecific = 0;
+                let roleBreakdown = '';
+                
+                if (player.role === "Doctor" || player.originalRole === "Doctor") {
+                    roleSpecific += rolePoints.doctorSaves || 0;
+                    if (rolePoints.doctorSaves) roleBreakdown += `Doctor saves: ${rolePoints.doctorSaves} pt(s)<br>`;
+                }
+                if (player.role === "Detective" || player.originalRole === "Detective") {
+                    roleSpecific += rolePoints.detectiveCrimes || 0;
+                    if (rolePoints.detectiveCrimes) roleBreakdown += `Detective crimes: ${rolePoints.detectiveCrimes} pt(s)<br>`;
+                }
+                if (player.role === "Judge" || player.originalRole === "Judge") {
+                    roleSpecific += rolePoints.judgeProtections || 0;
+                    if (rolePoints.judgeProtections) roleBreakdown += `Judge protections: ${rolePoints.judgeProtections} pt(s)<br>`;
+                }
+                if (player.role === "Mayor" || player.originalRole === "Mayor") {
+                    roleSpecific += rolePoints.mayorCorrectVotes || 0;
+                    if (rolePoints.mayorCorrectVotes) roleBreakdown += `Mayor correct votes: ${rolePoints.mayorCorrectVotes} pt(s)<br>`;
+                }
+                
+                // Check for Murderer and Spy both alive at end
+                if ((player.originalRole === "Murderer" || player.originalRole === "Spy") && player.alive && winner === "Evil") {
+                    const murderer = gameState.players.find(p => p.originalRole === "Murderer");
+                    const spy = gameState.players.find(p => p.originalRole === "Spy");
+                    if (murderer && spy && murderer.alive && spy.alive) {
+                        roleSpecific += 1;
+                        roleBreakdown += `Both Evil roles survived: 1 pt<br>`;
+                    }
+                }
+                
+                section.innerHTML = `
+                    <h3>${player.name} - ${player.role}${player.originalRole !== player.role ? ` (was ${player.originalRole})` : ''}</h3>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Automatic Points:</strong><br>
+                        Survived: ${survived} pts<br>
+                        Winning: ${winning} pts<br>
+                        ${roleBreakdown ? `<strong>Role Bonuses:</strong><br>${roleBreakdown}` : ''}
+                    </div>
+                    <div class="points-input">
+                        <label>Clues collected:</label>
+                        <input type="number" id="clues-${player.id}" min="0" value="0">
+                    </div>
+                    <div class="points-input">
+                        <label>Objectives completed:</label>
+                        <input type="number" id="objectives-${player.id}" min="0" max="3" value="0">
+                    </div>
+                    <div style="margin-top: 0.5rem; font-weight: bold; color: var(--accent-gold);">
+                        Subtotal (excluding manual): ${survived + winning + roleSpecific} pts
+                    </div>
+                `;
+                div.appendChild(section);
+            });
+
+            document.getElementById('gameEndPhase').classList.add('hidden');
+            document.getElementById('pointsEntryPhase').classList.remove('hidden');
+        }
+
+        function calculateFinalScores() {
+            const winner = gameState.players.filter(p => p.alive).length > 0 && 
+                          gameState.players.filter(p => p.alive && p.alignment === "Evil").length === 0 
+                          ? "Good" : "Evil";
+
+            gameState.players.forEach(player => {
+                const clues = parseInt(document.getElementById(`clues-${player.id}`).value) || 0;
+                const objectives = parseInt(document.getElementById(`objectives-${player.id}`).value) || 0;
+                
+                let points = 0;
+                
+                // Manual points
+                points += clues; // +1 per clue
+                points += objectives; // +1 per objective
+                
+                // Survival bonus
+                if (player.alive) points += 2;
+                
+                // Winning bonus
+                if (player.alive && player.alignment === winner) {
+                    points += winner === "Good" ? 3 : 4;
+                }
+                
+                // Role specific bonuses
+                const rolePoints = gameState.rolePoints[player.id] || {};
+                points += rolePoints.doctorSaves || 0;
+                points += rolePoints.detectiveCrimes || 0;
+                points += rolePoints.judgeProtections || 0;
+                points += rolePoints.mayorCorrectVotes || 0;
+                
+                // Murderer and Spy both alive bonus
+                if ((player.originalRole === "Murderer" || player.originalRole === "Spy") && player.alive && winner === "Evil") {
+                    const murderer = gameState.players.find(p => p.originalRole === "Murderer");
+                    const spy = gameState.players.find(p => p.originalRole === "Spy");
+                    if (murderer && spy && murderer.alive && spy.alive) {
+                        points += 1;
+                    }
+                }
+                
+                if (!gameState.cumulativeScores[player.id]) {
+                    gameState.cumulativeScores[player.id] = {
+                        name: player.name,
+                        points: 0
+                    };
+                }
+                gameState.cumulativeScores[player.id].points += points;
+            });
+
+            gameState.gamesPlayed++;
+            displayLeaderboard();
+        }
+
+        function displayLeaderboard() {
+            const scores = Object.values(gameState.cumulativeScores)
+                .sort((a, b) => b.points - a.points);
+
+            const podium = document.getElementById('podium');
+            podium.innerHTML = '';
+
+            const medals = ['🥇', '🥈', '🥉'];
+            const classes = ['first', 'second', 'third'];
+
+            for (let i = 0; i < Math.min(3, scores.length); i++) {
+                const place = document.createElement('div');
+                place.className = `podium-place ${classes[i]}`;
+                place.innerHTML = `
+                    <div class="medal">${medals[i]}</div>
+                    <h3 style="color: var(--accent-gold); margin-bottom: 0.5rem;">${scores[i].name}</h3>
+                    <div style="font-size: 2rem; font-weight: bold;">${scores[i].points} pts</div>
+                `;
+                podium.appendChild(place);
+            }
+
+            const fullLeaderboard = document.getElementById('fullLeaderboard');
+            fullLeaderboard.innerHTML = '<h3 style="margin: 2rem 0 1rem; text-align: center;">Full Standings</h3>';
+            
+            scores.forEach((score, idx) => {
+                const item = document.createElement('div');
+                item.className = 'vote-result-item';
+                item.innerHTML = `
+                    <span>${idx + 1}. ${score.name}</span>
+                    <span>${score.points} points</span>
+                `;
+                fullLeaderboard.appendChild(item);
+            });
+
+            document.getElementById('pointsEntryPhase').classList.add('hidden');
+            document.getElementById('leaderboardPhase').classList.remove('hidden');
+        }
+
+        function playAgain() {
+            // Reset game state but keep cumulative scores
+            gameState.round = 1;
+            gameState.mayorPenalty = false;
+            gameState.selectedCharacters = [];
+            gameState.players = [];
+            gameState.rolePoints = {};
+
+            // Hide all phases
+            document.querySelectorAll('[id$="Phase"]').forEach(el => el.classList.add('hidden'));
+            
+            // Show setup
+            document.getElementById('setupPhase').classList.remove('hidden');
+            
+            // Reset checkboxes
+            document.querySelectorAll('#characterGrid input').forEach(cb => cb.checked = false);
+            
+            // Hide sidebar
+            document.getElementById('sidebar').classList.add('hidden');
+        }
+
+        function wipeData() {
+            if (confirm('Are you sure you want to wipe all data? This cannot be undone.')) {
+                gameState = {
+                    selectedCharacters: [],
+                    players: [],
+                    round: 1,
+                    mayorPenalty: false,
+                    cumulativeScores: {},
+                    gamesPlayed: 0,
+                    rolePoints: {}
+                };
+                
+                playAgain();
+            }
+        }
+
+        // Initialize on load
+        initCharacterSelection();
+    </script>
+</body>
+</html>
